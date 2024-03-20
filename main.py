@@ -1,9 +1,10 @@
 # install requirements.txt
 from uuid import UUID
 from enum import Enum
-
-from pydantic import BaseModel, Field, HttpUrl, field_validator
-from fastapi import FastAPI, Query, Path, Body
+from uuid import UUID
+from datetime import datetime, time, timedelta
+from pydantic import BaseModel, Field, HttpUrl, field_validator, EmailStr
+from fastapi import FastAPI, Query, Path, Body, Header, Cookie
 
 app = FastAPI()
 
@@ -198,23 +199,23 @@ app = FastAPI()
 #     price: float
 #     tax: float
 
-    # name: str = Field(examples=["Foo"])
-    # description: str | None = Field(default=None, examples=["A very nice Item"])
-    # price: float = Field(examples=[35.4])
-    # tax: float | None = Field(default=None, examples=[3.2])
+# name: str = Field(examples=["Foo"])
+# description: str | None = Field(default=None, examples=["A very nice Item"])
+# price: float = Field(examples=[35.4])
+# tax: float | None = Field(default=None, examples=[3.2])
 
-    # model_config = {
-    #     "json_schema_extra": {
-    #         "examples": [
-    #             {
-    #                 "name": "Foo",
-    #                 "description": "A very nice Item",
-    #                 "price": 35.4,
-    #                 "tax": 3.2,
-    #             }
-    #         ]
-    #     }
-    # }
+# model_config = {
+#     "json_schema_extra": {
+#         "examples": [
+#             {
+#                 "name": "Foo",
+#                 "description": "A very nice Item",
+#                 "price": 35.4,
+#                 "tax": 3.2,
+#             }
+#         ]
+#     }
+# }
 
 
 # @app.post("/create-product")
@@ -251,3 +252,97 @@ app = FastAPI()
 #                          ):
 #     result = {"product": product}
 #     return result
+
+
+# -----------------------------Extra Data Types--------------------------------------------------------------------------
+
+# @app.put("/items/{item_id}")
+# async def read_items(
+#         item_id: UUID,
+#         start_datetime: datetime | None = Body(default=None),
+#         end_datetime: datetime | None = Body(default=None),
+#         repeat_at: time | None = Body(default=None),
+#         process_after: timedelta | None = Body(default=None),
+#
+# ):
+#     start_process = start_datetime + process_after
+#     duration = end_datetime - start_process
+#     return {
+#         "item_id": item_id,
+#         "start_datetime": start_datetime,
+#         "end_datetime": end_datetime,
+#         "repeat_at": repeat_at,
+#         "process_after": process_after,
+#         "start_process": start_process,
+#         "duration": duration,
+#     }
+
+
+# ------------------------------------Cookie Parameters and Header Parameters---------------------------------
+
+
+# @app.get("/get-item")
+# async def get_item(
+#         cookie_id: str | None = Cookie(default=None),
+#         x_token: list[str] | None = Header(default=None)
+# ):
+#     return {
+#         "cookie_id": cookie_id,
+#         "X-Token": x_token
+#     }
+
+
+# ------------------------------------Response Model - Return Type-----------------------------------------------------------
+
+# class Item(BaseModel):
+#     name: str
+#     desc: str | None = None
+#     price: float
+#     tax: float | None = None
+#     tags: list[str] = []
+#
+#
+# @app.post("/create-item")
+# async def create_item(item: Item):
+#     return item
+
+
+# example :--> 2
+# class UserBase(BaseModel):
+#     username: str
+#     email: EmailStr
+#     full_name: str | None = None
+#
+#
+# class UserIn(UserBase):
+#     password: str
+#
+#
+# class UserOut(UserBase):
+#     pass
+#
+#
+# @app.post("/user/", response_model=UserOut)
+# async def create_user(user: UserIn):
+#     return user
+
+# example :--> 3
+
+class Item(BaseModel):
+    name: str
+    desc: str | None = None
+    price: float
+    tax: float | None = None
+    tags: list[str] = []
+
+
+items = {
+    "foo": {"name": "Foo", "price": 50.2},
+    "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+    "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+}
+
+
+@app.get("/items/{item_id}", response_model=Item, response_model_exclude_unset=True)
+async def read_item(item_id: str):
+    return items[item_id]
