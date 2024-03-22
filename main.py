@@ -9,7 +9,6 @@ from typing import Union, Literal
 
 app = FastAPI()
 
-
 # @app.get("/")
 # async def root():
 #     return {"message": "Hello World"}
@@ -461,13 +460,14 @@ app = FastAPI()
 #     }
 
 
-# -----------------------------Form Data----------------------------------------------------------
+# -----------------------------Request Forms and Files----------------------------------------------------------
 # from typing import Annotated
 # from fastapi import File
-@app.post("/uploadfile/")
-async def create_upload_file(file: UploadFile):
-    print(file.file)
-    return {"filename": file.filename}
+# @app.post("/uploadfile/")
+# async def create_upload_file(file: UploadFile):
+#     print(file.file)
+#     return {"filename": file.filename}
+
 
 #
 # @app.post("/files/")
@@ -494,3 +494,53 @@ async def create_upload_file(file: UploadFile):
 # </body>
 #     """
 #     return HTMLResponse(content=content)
+
+
+# ---------------------------------Request Forms and Files-------------------------------------------------------
+
+# @app.post("/files/")
+# async def create_file(
+#         file: bytes = File(),
+#         fileb: UploadFile = File(),
+#         token: str = Form(),
+# ):
+#     return {
+#         "file_size": len(file),
+#         "token": token,
+#         "fileb_content_type": fileb.content_type,
+#     }
+
+# -----------------------------------Handling Errors---------------------------------------------------------------------
+
+from fastapi import HTTPException, Request
+from fastapi.responses import JSONResponse
+
+
+# items = {"foo": "The Foo Wrestlers"}
+#
+# @app.get("/get-item/{item_id}")
+# async def get_item(item_id):
+#     if item_id not in items:
+#         raise HTTPException(status_code=400, detail="wrong id")
+#     return items
+
+
+# example 2
+class UnicornException(Exception):
+    def __init__(self, name: str):
+        self.name = name
+
+
+@app.exception_handler(UnicornException)
+async def unicorn_exception_handler(request: Request, exc: UnicornException):
+    return JSONResponse(
+        status_code=418,
+        content={"message": f"Oops! {exc.name} did something. There goes a rainbow..."},
+    )
+
+
+@app.get("/unicorns/{name}")
+async def read_unicorn(name: str):
+    if name == "yolo":
+        raise UnicornException(name=name)
+    return {"unicorn_name": name}
