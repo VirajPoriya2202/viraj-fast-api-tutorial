@@ -4,7 +4,8 @@ from enum import Enum
 from uuid import UUID
 from datetime import datetime, time, timedelta
 from pydantic import BaseModel, Field, HttpUrl, field_validator, EmailStr
-from fastapi import FastAPI, Query, Path, Body, Header, Cookie
+from fastapi import FastAPI, Query, Path, Body, Header, Cookie, status, Form, UploadFile, File
+from typing import Union, Literal
 
 app = FastAPI()
 
@@ -328,21 +329,168 @@ app = FastAPI()
 
 # example :--> 3
 
-class Item(BaseModel):
-    name: str
-    desc: str | None = None
-    price: float
-    tax: float | None = None
-    tags: list[str] = []
+# class Item(BaseModel):
+#     name: str
+#     desc: str | None = None
+#     price: float
+#     tax: float | None = None
+#     tags: list[str] = []
+#
+#
+# items = {
+#     "foo": {"name": "Foo", "price": 50.2},
+#     "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
+#     "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
+# }
+#
+#
+# @app.get("/items/{item_id}", response_model=Item, response_model_exclude_unset=True)
+# async def read_item(item_id: str):
+#     return items[item_id]
+
+# -----------------------------Extra Models-------------------------------------------------
+
+# class UserIn(BaseModel):
+#     username: str = Field(examples=["VirajPoriya2202"])
+#     password: str = Field(examples=["Test@123"])
+#     email: EmailStr = Field(examples=["porriya_viraj@gmail.com"])
+#     full_name: str | None = Field(examples=["Viraj Poriya"])
+#
+#
+# class UserOut(BaseModel):
+#     username: str
+#     email: EmailStr
+#     full_name: str | None = None
+#
+#
+# class UserInDB(BaseModel):
+#     username: str
+#     hashed_password: str
+#     email: EmailStr
+#     full_name: str | None = None
+#
+#
+# def fake_password_hasher(raq_password: str):
+#     return "supersecret" + raq_password
+#
+#
+# def fake_user_user(user_in: UserIn):
+#     hashed_password = fake_password_hasher(user_in.password)
+#     user_in_db = UserInDB(**user_in.dict(), hashed_password=hashed_password)
+#     # print("user saved!...")
+#     # print("user_in_db", user_in_db)
+#     return user_in_db
+#
+#
+# @app.post("/user/", response_model=UserOut)
+# async def create_user(user_in: UserIn):
+#     user_save = fake_user_user(user_in)
+#     print(user_save)
+#     return user_save
+
+# Example 2 --------------------
+
+# class BaseItem(BaseModel):
+#     description: str
+#     type: str
+#
+#
+# class CarItem(BaseItem):
+#     type: str = "car"
+#
+#
+# class PlaneItem(BaseItem):
+#     type: str = "plane"
+#     size: int
+#
+#
+# items = {
+#     "item1": {"description": "All my friends drive a low rider", "type": "car"},
+#     "item2": {
+#         "description": "Music is my aeroplane, it's my aeroplane",
+#         "type": "plane",
+#         "size": 5,
+#     },
+# }
+#
+#
+# @app.get("/item/item_id", response_model=Union[PlaneItem, CarItem])
+# async def read_item(item_id: Literal['item1', 'item2']):
+#     return items[item_id]
 
 
-items = {
-    "foo": {"name": "Foo", "price": 50.2},
-    "bar": {"name": "Bar", "description": "The bartenders", "price": 62, "tax": 20.2},
-    "baz": {"name": "Baz", "description": None, "price": 50.2, "tax": 10.5, "tags": []},
-}
+# next example
+
+# class Item(BaseModel):
+#     name: str
+#     description: str
+#
+#
+# items = [
+#     {"name": "Foo", "description": "There comes my hero"},
+#     {"name": "Red", "description": "It's my aeroplane"},
+# ]
+#
+#
+# @app.get("/items/", response_model=list[Item])
+# async def read_items():
+#     return items
 
 
-@app.get("/items/{item_id}", response_model=Item, response_model_exclude_unset=True)
-async def read_item(item_id: str):
-    return items[item_id]
+# next example
+# @app.get("/keyword-weights/", response_model=dict[str, float])
+# async def read_keyword_weights():
+#     return {"foo": 2.3, "bar": 3.4}
+
+# ------------------------Response Status Code-------------------------------------------
+
+# @app.post("/items/", status_code=status.HTTP_201_CREATED)
+# async def create_item(name: str):
+#     return {"name": name}
+
+
+# -----------------------------Form Data----------------------------------------------------------
+
+
+# @app.post("/log-in")
+# async def login(username: str = Form(), password: str = Form()):
+#     print("username:-->", username)
+#     print("password:-->", password)
+#     return {
+#         "username": username
+#     }
+
+
+# -----------------------------Form Data----------------------------------------------------------
+# from typing import Annotated
+# from fastapi import File
+@app.post("/uploadfile/")
+async def create_upload_file(file: UploadFile):
+    print(file.file)
+    return {"filename": file.filename}
+
+#
+# @app.post("/files/")
+# async def create_file(file: bytes = File()):
+#     if not file:
+#         return {"message": "No file sent"}
+#     else:
+#         return {"file_size": len(file)}
+# from fastapi.responses import HTMLResponse
+#
+#
+# @app.get("/")
+# async def main():
+#     content = """
+# <body>
+# <form action="/files/" enctype="multipart/form-data" method="post">
+# <input name="files" type="file" multiple>
+# <input type="submit">
+# </form>
+# <form action="/uploadfiles/" enctype="multipart/form-data" method="post">
+# <input name="files" type="file" multiple>
+# <input type="submit">
+# </form>
+# </body>
+#     """
+#     return HTMLResponse(content=content)
